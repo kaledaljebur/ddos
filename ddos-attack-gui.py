@@ -90,7 +90,7 @@ def guiFunction():
         where you have explicit permission to conduct such tests. Unauthorized use
         is illegal and unethical.
 
-        Created by Kaled Aljebur for learning purposes in teaching clases.
+        Created by Kaled Aljebur for learning purposes in teaching classes.
         """
         
         top = tk.Toplevel(root)
@@ -173,7 +173,7 @@ def arguFunction():
         
         print("\n[✓] Simulation Complete")
 
-    print("arguFunction")
+    # print("Example: sudo python ddos-attack.py 192.168.8.40 80 30.")
     destIP = sys.argv[1]
     destPort = int(sys.argv[2])
     packetCount = int(sys.argv[3])
@@ -182,7 +182,7 @@ def arguFunction():
 
 def helpMenu():
     helpText2 = """
-    Created by Kaled Aljebur for learning purposes in teaching clases.
+    Created by Kaled Aljebur for learning purposes in teaching classes.
     Usage 1 for GUI window: sudo python ddos-attack.py.
     Usage 2 for terminal only: sudo python ddos-attack.py <destIP> <destPort> <packetCount>.
     Example: sudo python ddos-attack.py 192.168.8.40 80 30.

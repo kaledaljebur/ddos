@@ -24,7 +24,7 @@ def synFlood(destIP, destPort, packetCount, delay=0.1):
 
 def helpMenu():
     helpText2 = """
-    Created by Kaled Aljebur for learning purposes in teaching clases.
+    Created by Kaled Aljebur for learning purposes in teaching classes.
     Usage: sudo python ddos-attack.py <destIP> <destPort> <packetCount>.
     Example: sudo python ddos-attack.py 192.168.8.40 80 30.
 
