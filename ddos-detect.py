@@ -10,7 +10,7 @@ synCounts = defaultdict(int)
 lastReset = time.time()
 
 def logAttack(ip, count):
-    """Logs potential SYN flood attacks to a file."""
+    outText1="""Logs potential SYN flood attacks to a file."""
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
     logMsg = f"[{timestamp}] Possible SYN flood from {ip} ({count} SYNs in {interval}s)\n"
     print(logMsg, end="")
@@ -18,7 +18,7 @@ def logAttack(ip, count):
         f.write(logMsg)
 
 def analyzePacket(packet):
-    """Processes each packet and checks for SYN floods."""
+    outText2="""Processes each packet and checks for SYN floods."""
     global lastReset
     
     if time.time() - lastReset > interval:
@@ -33,7 +33,7 @@ def analyzePacket(packet):
             logAttack(srcIP, synCounts[srcIP])
 
 def startMonitor(interface="eth0"):
-    """Starts the SYN flood monitor."""
+    outText3="""Starts the SYN flood monitor."""
     print(f"[+] Monitoring for SYN floods on {interface} (Threshold: {threshold} SYNs/{interval}s)")
     print(f"[+] Logging to {logFile}")
     sniff(iface=interface, prn=analyzePacket, filter="tcp[tcpflags] == tcp-syn")

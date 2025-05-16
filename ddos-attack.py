@@ -22,11 +22,22 @@ def synFlood(destIP, destPort, packetCount, delay=0.1):
     
     print("\n[✓] Simulation Complete")
 
+def helpMenu():
+    helpText2 = """
+    Created by Kaled Aljebur for learning purposes in teaching clases.
+    Usage: sudo python ddos-attack.py <destIP> <destPort> <packetCount>.
+    Example: sudo python ddos-attack.py 192.168.8.40 80 30.
+
+    To see the traffic, use Wireshark with `tcp.port == 80` filter, or whatever port used in the command.
+    Make sre the service is running and not blocked by firewall in the target, 
+    otherwise you will not see [SYN, ACK] flag in Wireshark.
+    """
+    print(helpText2)
+    sys.exit(1) 
+
 if __name__ == "__main__":
     if len(sys.argv) != 4:
-        print("Usage: python ddos-attack.py <destIP> <destPort> <packetCount>")
-        print("Example: python ddos-attack.py 192.168.1.100 80 40")
-        sys.exit(1)
+        helpMenu()
     
     destIP = sys.argv[1]
     destPort = int(sys.argv[2])
