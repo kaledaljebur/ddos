@@ -170,19 +170,21 @@ def runGUI():
 def helpMenu():
     outText = """
     =========================================
-    Python Repeater for DDoS Attack (Multiprocessing Pool).
+    Attack Repeater for DDoS Attack (Multiprocessing Pool).
     Created by Kaled Aljebur for learning purposes in teaching classes.
     =========================================
-    1. Before running this repeater, it is better to move to Downloads folder 
-       where attck file located, like 'cd Downloads', then re-run this repeater.
+    This program can repeat any command simultaneously with multithreading. 
+
+    1. Before running this repeater, it is better to move the terminal to Downloads folder 
+       where the attack file located, like 'cd Downloads', then re-run this repeater.
        Or, you can use full absolute path like /home/kaled/Downloads/ddos...py
-    2. Run the repeater using: sudo python repeater.py
-    3. Example output usage =>
-        Enter the command: sudo python ddos-attack-app.py 192.168.8.40 80 200000
+    2. To run it with GUI: 'sudo python attack-repeater.py
+    3. To run it without GUI: 'sudo attack-repeater.py -a' the follow =>
+        Enter the command: python ddos-attack-app.py 192.168.8.40 80 200000
         Enter the number repeats: 50
         Enter the number of CONCURRENT attacks (max: x): 2
-    To check requests, use: ps aux | grep 'ddos-attack-app.py'
-    To stop requests, use: sudo pkill -9 -f ddos-attack-app.py || true ; reset
+    4. To check requests, use: ps aux | grep 'ddos-attack-app.py'
+    5. To stop requests, use: sudo pkill -9 -f ddos-attack-app.py || true ; reset
     """
     return outText
 
