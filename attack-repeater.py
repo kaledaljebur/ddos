@@ -46,15 +46,15 @@ def runBackground():
         sys.exit(1)
     try:
         maxCconcurrentProcesses = os.cpu_count() or 1
-        numConcurrentString = input(f"Enter the number of concurrent attacks (max: {maxCconcurrentProcesses}): ")
+        numConcurrentString = input(f"Enter the number of CPUs (max: {maxCconcurrentProcesses}): ")
         numConcurrent = int(numConcurrentString)
         if numConcurrent <= 0:
             raise ValueError
     except ValueError:
-        print("Error: Invalid number of concurrent attacks. Please enter a positive integer.")
+        print("Error: Invalid number of CPUs attacks. Please enter a positive integer.")
         sys.exit(1)
     print("")
-    print(f"Preparing to launch '{repeatCommand}' {numTimes} times with {numConcurrent} concurrent workers...")
+    print(f"Preparing to launch '{repeatCommand}' {numTimes} times with {numConcurrent} CPUs workers...")
     print("You might be prompted for your sudo password by each instance or once initially.")
     print("Output from the repeated commands will NOT appear in this terminal.")
     print("=========================================")
@@ -91,18 +91,10 @@ def runGUI():
     
     def stopRepeater(killCommand):
         cmd = killCommand.get().strip()
-        # print(command)
         if not cmd:
             messagebox.showerror("Error", "No stop command provided.")
             return
         try:
-            # result = subprocess.run(
-            #     ["pkill", "-9", "-f", "ddos-attack-app.py"],
-            #     check=True,
-            #     stdout=subprocess.PIPE,
-            #     stderr=subprocess.PIPE,
-            #     text=True
-            # )
             cmd_args = shlex.split(cmd)
             result = subprocess.run(
                 cmd_args,
@@ -122,7 +114,7 @@ def runGUI():
     def showHelp():
         helpWindow = tk.Toplevel(root)
         helpWindow.title("Help")
-        helpWindow.geometry("700x400")
+        helpWindow.geometry("750x400")
         helpText = tk.Text(helpWindow, wrap="word")
         helpText.insert("1.0", helpMenu())
         helpText.config(state="disabled")
@@ -132,7 +124,7 @@ def runGUI():
     root.title("Attack Repeater (Educational)")
 
     tk.Label(root, text="Command:").grid(row=0, column=0, padx=10, pady=5, sticky="e")
-    entryCommand = tk.Entry(root, width=45)
+    entryCommand = tk.Entry(root, width=47)
     entryCommand.grid(row=0, column=1, padx=10, pady=5, sticky="w")
     entryCommand.insert(0, "sudo python ddos-attack-app.py 192.168.8.40 80 200000")
 
@@ -141,25 +133,20 @@ def runGUI():
     entryRepeats.grid(row=1, column=1, padx=10, pady=5, sticky="w")
     entryRepeats.insert(0, "50")
 
-    tk.Label(root, text="Concurrency:").grid(row=2, column=0, padx=10, pady=5, sticky="e")
+    tk.Label(root, text=f"CPUs (max {os.cpu_count()}):").grid(row=2, column=0, padx=10, pady=5, sticky="e")
     entryConcurrent = tk.Entry(root)
     entryConcurrent.grid(row=2, column=1, padx=10, pady=5, sticky="w")
     entryConcurrent.insert(0, "2")
 
-    tk.Label(root, text="Stop the processes:").grid(row=3, column=0, padx=10, pady=5, sticky="e")
+    tk.Label(root, text="Stop command:").grid(row=3, column=0, padx=10, pady=5, sticky="e")
     stopCommand = tk.Entry(root, width=25)
     stopCommand.grid(row=3, column=1, padx=10, pady=5, sticky="w")
     stopCommand.insert(0, "pkill -9 -f ddos-attack-app.py")
-
-    # tk.Button(root, text="Help", command=showHelp).grid(row=4, column=0, pady=5)
-    # tk.Button(root, text="Run", command=runRepeater).grid(row=4, column=1, pady=5)
-    # tk.Button(root, text="Stop", command=stopRepeater).grid(row=4, column=2, pady=5)
 
     tk.Button(root, text="Help", command=showHelp).grid(row=4, column=0, pady=5)
     buttonFrame = tk.Frame(root)
     buttonFrame.grid(row=4, column=1, pady=5, sticky="w")
     tk.Button(buttonFrame, text="Run", command=runRepeater).pack(side="left", padx=5)
-    # tk.Button(buttonFrame, text="Stop", command=runRepeater).pack(side="left", padx=5)
     tk.Button(buttonFrame, text="Stop", command=lambda: stopRepeater(stopCommand)).pack(side="left", padx=5)
 
     resultLabel = tk.Label(root, text="", fg="green")
@@ -168,21 +155,22 @@ def runGUI():
     root.mainloop()
 
 def helpMenu():
-    outText = """
-    =========================================
+    characters="="*80 
+    outText = f"""
+    {characters}
     Attack Repeater for DDoS Attack (Multiprocessing Pool).
     Created by Kaled Aljebur for learning purposes in teaching classes.
-    =========================================
+    {characters}
     This program can repeat any command simultaneously with multithreading. 
 
     1. Before running this repeater, it is better to move the terminal to Downloads folder 
        where the attack file located, like 'cd Downloads', then re-run this repeater.
        Or, you can use full absolute path like /home/kaled/Downloads/ddos...py
-    2. To run it with GUI: 'sudo python attack-repeater.py
+    2. To run it with GUI: 'sudo python attack-repeater.py'.
     3. To run it without GUI: 'sudo attack-repeater.py -a' the follow =>
         Enter the command: python ddos-attack-app.py 192.168.8.40 80 200000
         Enter the number repeats: 50
-        Enter the number of CONCURRENT attacks (max: x): 2
+        Enter the number of CPUs (max: x): 2
     4. To check requests, use: ps aux | grep 'ddos-attack-app.py'
     5. To stop requests, use: sudo pkill -9 -f ddos-attack-app.py || true ; reset
     """
