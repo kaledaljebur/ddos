@@ -100,7 +100,7 @@ def guiFunction():
         closeButton = ttk.Button(top, text="Close", command=top.destroy)
         closeButton.pack(pady=5)
 
-    print("Please follow the GUI windows.")
+    print("Please follow the GUI window.")
     print("Created by Kaled Aljebur for learning purposes in teaching clases.")
     root = tk.Tk()
     root.title("SYN Flood Simulator (Educational)")

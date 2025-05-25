@@ -159,6 +159,7 @@ def helpMenu():
     outText = f"""
     {characters}
     Attack Repeater for DDoS Attack (Multiprocessing Pool).
+    Tested in Kali and Windows 10, but stop button still not for Windows.
     Created by Kaled Aljebur for learning purposes in teaching classes.
     {characters}
     This program can repeat any command simultaneously with multithreading. 
